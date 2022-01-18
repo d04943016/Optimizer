@@ -1,4 +1,4 @@
-     count_list      y_history   x[0]_history   x[1]_history  dx[0]_history  dx[1]_history
+     count_list      y_history    x_0_history    x_1_history   dx_0_history   dx_1_history
               0    5.00000e-01    1.50000e+00    1.00000e+00   -1.00000e+00   -1.00000e+00
               1    5.00000e-01    5.00000e-01    0.00000e+00    1.00000e-01    1.00000e-01
               2    3.20000e-01    6.00000e-01    1.00000e-01    9.88126e-02    9.88126e-02

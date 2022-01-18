@@ -43,7 +43,7 @@ def test(optimizer, x_init, N=1, savefilepath='./Example', save_history=True):
     print('')
 
     if save_history:
-        optimizer.save_history(savefilepath=savefilepath)
+        optimizer.save_history(savefilepath=savefilepath).plot_history(savefilepath=savefilepath)
 if __name__ == '__main__':
     """ example """
     min1, min2 = 1, 0.5

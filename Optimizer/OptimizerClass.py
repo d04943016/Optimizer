@@ -8,6 +8,8 @@ import os
 import copy
 import json
 import numpy as np
+import matplotlib.pyplot as plt
+
 class Optimizer:
     """
     Optimizer is a virtual class for optimization method. 
@@ -136,6 +138,27 @@ class IterationOptimizer(Optimizer):
                         file.write('{0:>15.5e}'.format( data ))
                 file.write('\n')
         return self
+    def plot_history(self, savefilename:str=None, savefilepath:str='./', showbool=False):
+        """ plot history """
+        if not self._parameter['save_history_flag']:
+            return
+        if savefilename is None:
+            savefilename = self.name
+        if not os.path.isdir(savefilepath):
+            os.makedirs( savefilepath )
+        keytuple, hist_dict = self.history_dict
+        count_list = hist_dict['count_list']
+        for key in keytuple:
+            if key=='count_list':
+                continue
+            plt.plot(count_list, hist_dict[key])
+            plt.xlabel('count')
+            plt.ylabel(key)
+            plt.savefig( os.path.join( savefilepath, savefilename+'_'+key+'_history.png'), bbox_inches='tight' )
+            if showbool:
+                plt.show()
+            plt.close()
+        return self
     """ execution (workflow) """
     def optimize(self, x_init:np.ndarray)->np.ndarray:
         """ optimization workflow """
@@ -206,20 +229,20 @@ class IterationOptimizer(Optimizer):
         """
         if (not self.optimized_flag) or (not self._parameter['save_history_flag']):
             return [], {}
-        tmp_dict = {'count_list':copy.deepcopy(self.count_list),
-                    'y_history':copy.deepcopy(self.target_history)}
+        tmp_dict = {'count_list': copy.deepcopy( self.count_list ) ,
+                    'y_history': np.array( self.target_history) }
         key_list = ['count_list', 'y_history']
         # if x_history is a list or array not a single value
         # change x_history to x[0]_history, x[1]_history, ...
         if ((not isinstance( self.x_history[0], list )) and 
             ( (not isinstance( self.x_history[0], np.ndarray )) or self.x_history[0].ndim==0 ) ):
-            tmp_dict['x_history'] = copy.deepcopy(self.x_history)
+            tmp_dict['x_history'] = np.array( self.x_history )
             key_list.append( 'x_history' )
         else:
             for ii in range( len(self.x_history[0])  ):
-                tmp_key = 'x[{0}]_history'.format(ii)
+                tmp_key = 'x_{0}_history'.format(ii)
                 key_list.append(tmp_key)
-                tmp_dict[tmp_key]= [ l1[ii] for l1 in self.x_history]
+                tmp_dict[tmp_key]= np.array( [ l1[ii] for l1 in self.x_history] )
         return tuple(key_list), tmp_dict
     @property
     def max_iter(self):

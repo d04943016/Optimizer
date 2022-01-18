@@ -114,15 +114,13 @@ class GradientDescentOptimizer(IterationOptimizer):
         # change dx_history to dx[0]_history, dx[1]_history, ...
         if ((not isinstance( self.dx_history[0], list )) and 
             ( (not isinstance( self.dx_history[0], np.ndarray )) or self.dx_history[0].ndim==0 ) ):
-            tmp_dict['dx_history'] = copy.deepcopy(self.dx_history)
+            tmp_dict['dx_history'] = np.array( self.dx_history )
             key_list.append( 'dx_history' )
         else:
             for ii in range( len(self.dx_history[0])  ):
-                tmp_key = 'dx[{0}]_history'.format(ii)
+                tmp_key = 'dx_{0}_history'.format(ii)
                 key_list.append(tmp_key)
-                tmp_dict[tmp_key]= [ l1[ii] for l1 in self.dx_history]
-        tmp_dict['dx_history'] = copy.deepcopy(self.dx_history)
-        key_tuple = key_tuple + ('dx_history',)
+                tmp_dict[tmp_key]= np.array( [ l1[ii] for l1 in self.dx_history] )
         return tuple(key_list), tmp_dict
     @property
     def fun_gradient(self):
@@ -447,7 +445,7 @@ def test(optimizer, x_init, N=1, savefilepath='./test', save_history=True):
     print('')
 
     if save_history:
-        optimizer.save_history(savefilepath=savefilepath)
+        optimizer.save_history(savefilepath=savefilepath).plot_history(savefilepath=savefilepath)
 if __name__ == '__main__':
     """ example """
     min1, min2 = 1, 0.5
