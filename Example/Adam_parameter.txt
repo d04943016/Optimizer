@@ -1,0 +1,1 @@
+{"counter": -1, "max_iter": 50000, "print_iter_flag": true, "print_every_iter": 100, "save_history_flag": true, "dx_num_grad": 1e-10, "tol": 1e-05, "beta1": 0.9, "beta2": 0.999, "epsilon": 1e-08, "learning_rate": 0.1}
