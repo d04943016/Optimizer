@@ -58,6 +58,8 @@ virtual class:
             - reset the history of optimization
         - .save_history(savefilename:str=None, savefilepath:str='./')->self
             - save the history of optimization
+        - .plot_history(savefilename:str=None, savefilepath:str='./')->self
+            - save the history of optimization
         # property
         - .history_dict -> dict
             - history dictionary

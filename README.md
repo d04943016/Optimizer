@@ -52,7 +52,8 @@ a derived class of **Optimizer**, a virtual class related to iteration optimizin
 (b) utility<br/>
 * `.reset_history()->self`<br/>: reset the history of optimization
 * `.save_history(savefilename:str=None, savefilepath:str='./')->self`: save the history of optimization<br/>
-
+* `.plot_history(savefilename:str=None, savefilepath:str='./')->self`: plot the history of optimization<br/>
+* 
 (c) property<br/>
 * `.history_dict -> dict`: history dictionary<br/>
 * `.max_iter (setter) -> int`: maximum iteration<br/>
