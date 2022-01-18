@@ -6,7 +6,9 @@ There are two different types of optimizer.
 
 
 Copyright (c) 2020-2022 Wei-Kai Lee. All rights reserved<br/>
-
+## Requirements
+* numpy
+* scipy
 
 ## references
 [1]: https://zhuanlan.zhihu.com/p/22252270 <br/>
