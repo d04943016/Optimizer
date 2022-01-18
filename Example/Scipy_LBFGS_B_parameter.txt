@@ -1,0 +1,1 @@
+{"counter": -1, "max_iter": 50000, "print_iter_flag": true, "print_every_iter": 1, "save_history_flag": true, "dx_num_grad": 1e-10, "tol": null, "ftol": 1e-11, "gtol": 1e-08, "eps": 1e-08, "bnd": [0, null]}

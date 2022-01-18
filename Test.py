@@ -6,6 +6,7 @@
 
 import numpy as np
 from Optimizer.GradientDescentOptimizer import GradientDescent, Momentum, AdaGrad, AdaDelta, RMSprop, Adam
+from Optimizer.ScipyOptimizer import Scipy_LBFGS_B
 
 """ timer """
 def timer(optimier, x_init, N=1):
@@ -93,3 +94,9 @@ if __name__ == '__main__':
                        max_iter= 5e4, dx=1e-10, tol=1e-5, 
                        beta1=0.9, beta2=0.999, epsilon=1e-8, lr=0.1 )
     test(adam, x_init, N=1)
+
+    """ example Scipy_LBFGS_B """
+    scipy_optimizer = Scipy_LBFGS_B(target_fun=y, fun_gradient=y_grad, max_iter= 5e4, 
+                                    print_iter_flag=True, print_every_iter=1, save_history_flag=True,
+                                    dx=1e-10, ftol=1e-11, gtol=1e-08, eps=1e-08, bnd=(0,None))
+    test(scipy_optimizer, x_init, N=1)

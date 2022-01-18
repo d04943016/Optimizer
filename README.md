@@ -267,4 +267,4 @@ in main in GradientDescentOptimizer.py, ScipyOptimizer.py<br/>
 `LossList`  : history of loss function<br/>
 
 (C) example<br/>
-in main in myLearner.py<br/>
+in Test.py<br/>

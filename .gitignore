@@ -4,7 +4,7 @@
 
 ### macOS ###
 # remove directory
-./vscode/*
+./.venv/*
 
 # General
 .DS_Store
