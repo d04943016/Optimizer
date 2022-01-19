@@ -49,6 +49,9 @@ class Scipy_LBFGS_B(GradientDescentOptimizer):
             self._parameter['counter'] += 1
             self._dx = Xi - self._x
             self._x = copy.deepcopy(Xi)
+            if self._x.size==1:
+                self._x = self._x[0]
+                self._dx = self._dx[0]
             self._y = self.target_fun(self._x)
             if ( self._parameter['print_iter_flag'] and (self._parameter['counter']%self._parameter['print_every_iter']==0)):
                 self._print_one()
@@ -56,7 +59,7 @@ class Scipy_LBFGS_B(GradientDescentOptimizer):
                 self._add_one_to_history()
                 
         results = optimize.minimize( 
-                      fun=self.gradient, 
+                      fun=self.y_and_gradient, 
                       x0=x_init, 
                       method="L-BFGS-B", 
                       jac=True, 
@@ -102,9 +105,17 @@ if __name__ == '__main__':
     grad = lambda x: np.array( [2*(x[0]-min1), 2*(x[1]-min2)] )
     y_grad = lambda x: ( y(x), grad(x) )
     x_init = np.array( [1.5, 1.0] )
-
+    
+    #y = lambda x: (x-1)**2
+    #grad = lambda x: 2*(x-1)
+    #y_grad = lambda x: ( y(x), grad(x) )
+    #x_init = np.array( 1.5 )
+        
+    y_grad = y_grad
+    grad_flag = True
+    
     """ example Scipy_LBFGS_B """
-    scipy_optimizer = Scipy_LBFGS_B(target_fun=y, fun_gradient=y_grad, max_iter= 5e4, 
+    scipy_optimizer = Scipy_LBFGS_B(target_fun=y_grad, fun_gradient=grad_flag, max_iter= 5e4, 
                                     print_iter_flag=True, print_every_iter=1, save_history_flag=True,
                                     dx=1e-10, ftol=1e-11, gtol=1e-08, eps=1e-08, bnd=(0,None))
     test(scipy_optimizer, x_init, N=1)

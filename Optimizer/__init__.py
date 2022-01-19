@@ -98,11 +98,10 @@ virtual class:
         - target_fun: target function
         - fun_gradient: the gradient of target function
                          if fun_gradient is None, the optimizer would use -two-point- method to do the numerical gradient
-                         there are two types of output
-                         a. dy_dx = fun_gradient(x)
-                         b. y, dy_dx = fun_gradient(x) (faster)
-                         , where dy_dx is the gradient of target_function with the same size of x
-                         and y is the output of target_function.
+                         (i.e. dy_dx = fun_gradient(x), dy_dx shoud be in the same shape of x)
+                         Or fun_gradient can be a gradient provided flag (bool). If fun_gradient is True, it indicates
+                         that target_fun provided two returns value (y, dy_dx = target_fun(x)). If fun_gradient is False,
+                         the optimzer would use -two-point- method to do the numerical gradient.
         - name: the name of optimizer
         - max_iter: maximum iteration
         - print_iter_flag: whether to print the optimizing information when optimzing

@@ -15,7 +15,7 @@ try:
 except:
     from .OptimizerClass import IterationOptimizer
 
-def numerical_gradient(fun, x, dx=1e-10, dtype=np.float_):
+def numerical_gradient(fun, x, dx=1e-10, dtype=np.float_, y_out=False):
     y = fun( x )
     if x.ndim ==0:
         x = np.array( [x], dtype=x.dtype )
@@ -28,7 +28,9 @@ def numerical_gradient(fun, x, dx=1e-10, dtype=np.float_):
         dy_dx[ii] = ( fun(x_tmp)-y )/dx
     if dy_dx.size==1:
         return dy_dx[0]
-    return y, dy_dx
+    if y_out:
+        return y, dy_dx
+    return dy_dx
 class GradientDescentOptimizer(IterationOptimizer):
     def __init__(self, target_fun=None, fun_gradient=None, name:str='', max_iter:int= 5e4, 
                  print_iter_flag:bool=True, print_every_iter:int=10, save_history_flag:bool=False,
@@ -38,10 +40,7 @@ class GradientDescentOptimizer(IterationOptimizer):
                           save_history_flag=save_history_flag )
         self._parameter['dx_num_grad'] = dx
         self._parameter['tol'] = tol
-        if fun_gradient is None:
-            self.__fun_gradient = lambda x: numerical_gradient( self.target_fun, x, dx=self._parameter['dx_num_grad'])
-        else:
-            self.__fun_gradient = fun_gradient
+        self.fun_gradient = fun_gradient
         self.state_reset()
     """ untility (overload) """
     def print_state(self):
@@ -60,15 +59,17 @@ class GradientDescentOptimizer(IterationOptimizer):
         self._dx = np.inf
         return self
     """ calculation """
-    def gradient(self, x:np.ndarray):
+    def y_and_gradient(self, x:np.ndarray):
         """ gradient of target function """
-        if (self.fun_gradient is not None):
-            tmp = self.fun_gradient(x)
-            if isinstance(tmp, tuple):
-                return tmp # y, dy_dx
-            y = self.target_fun(x)
-            return y, tmp
-        assert False
+        # whether self._fun_gradient is provided or not
+        if (self._fun_gradient is not None):
+            # whether self._fun_gradient is a bool or not
+            if isinstance(self._fun_gradient, bool):
+                # whether self._fun_gradient is True
+                if self._fun_gradient:
+                    return self._target_fun(x)
+        y, dy_dx = self.target_fun(x), self.fun_gradient(x)
+        return y, dy_dx
     """ protected (overload) """
     def _pre_iteration(self, x_init:np.ndarray):
         """ preparation before iteration """
@@ -91,6 +92,18 @@ class GradientDescentOptimizer(IterationOptimizer):
     def _termination(self):
         return ( np.max( np.abs(self._dx) ) > self._parameter['tol'] ) & (self._parameter['counter']<self._parameter['max_iter'])
     """ property (overload) """
+    """ property """
+    @property
+    def target_fun(self):
+        # whether self._fun_gradient is provided or not
+        if (self._fun_gradient is not None):
+            # whether self._fun_gradient is a bool or not
+            if isinstance(self._fun_gradient, bool):
+                # whether self._fun_gradient is True
+                if self._fun_gradient:
+                    return lambda x: self._target_fun(x)[0]
+        # self._target_fun is a normal single output function
+        return self._target_fun
     @property
     def history_dict(self):
         """ 
@@ -124,7 +137,18 @@ class GradientDescentOptimizer(IterationOptimizer):
         return tuple(key_list), tmp_dict
     @property
     def fun_gradient(self):
-        return self.__fun_gradient
+        # gradient of the target function is not provided
+        if self._fun_gradient is None:
+            return lambda x: numerical_gradient( self.target_fun, x, dx=self._parameter['dx_num_grad'])
+        # if self._fun_gradient is a bool flag
+        if isinstance(self._fun_gradient, bool):
+            # self._target_fun returns y and gradient simultaneously
+            if self._fun_gradient:
+                return lambda x: self._target_fun(x)[1]
+            # self._target_fun only returns y
+            return lambda x: numerical_gradient( self.target_fun, x, dx=self._parameter['dx_num_grad'])
+        # self._fun_gradient is a normal function with single output
+        return self._fun_gradient
     @property
     def dx_num_grad(self):
         return self._parameter['dx_num_grad']
@@ -132,10 +156,15 @@ class GradientDescentOptimizer(IterationOptimizer):
     def tol(self):
         return self._parameter['tol']
     """ setter """
+    @target_fun.setter
+    def target_fun(self, target_fun):
+        """ target function """
+        self._target_fun = target_fun
+        self.state_reset()
     @fun_gradient.setter
     def fun_gradient(self, fun_gradient):
         """ gradient of target function """
-        self.__fun_gradient = fun_gradient
+        self._fun_gradient = fun_gradient
         self.state_reset()
     @dx_num_grad.setter
     def dx_num_grad(self, dx_num_grad:float):
@@ -158,7 +187,7 @@ class GradientDescent(GradientDescentOptimizer):
         """ update the parameter in one step"""
         self._parameter['counter'] += 1
         self._x += self._dx
-        self._y, dy_dx = self.gradient( self._x )
+        self._y, dy_dx = self.y_and_gradient( self._x )
         self._dx = -self._parameter['learning_rate']*dy_dx
     """ property """
     @property
@@ -188,7 +217,7 @@ class Momentum(GradientDescentOptimizer):
         """ update the parameter in one step"""
         self._parameter['counter'] += 1
         self._x += self._dx
-        self._y, dy_dx = self.gradient( self._x )
+        self._y, dy_dx = self.y_and_gradient( self._x )
         self._dx = self._parameter['beta'] * self._dx - self._parameter['learning_rate'] * dy_dx
     """ property """
     @property
@@ -234,7 +263,7 @@ class AdaGrad(GradientDescentOptimizer):
         """ update the parameter in one step"""
         self._parameter['counter'] += 1
         self._x += self._dx
-        self._y, dy_dx = self.gradient( self._x )
+        self._y, dy_dx = self.y_and_gradient( self._x )
         self.__sigma += dy_dx**2
         self._dx = - self._parameter['learning_rate'] * dy_dx/np.sqrt( self.__sigma+self._parameter['epsilon'] )
         return self
@@ -278,7 +307,7 @@ class AdaDelta(GradientDescentOptimizer):
         """ update the parameter in one step"""
         self._parameter['counter'] += 1
         self._x += self._dx
-        self._y, dy_dx = self.gradient( self._x )
+        self._y, dy_dx = self.y_and_gradient( self._x )
         self.__sigma = self._parameter['rho']*self.__sigma+(1-self._parameter['rho'])*(dy_dx**2)
         self._dx = - np.sqrt( self.__deltaX+self._parameter['epsilon'] ) * dy_dx/np.sqrt( self.__sigma+self._parameter['epsilon'] )
         self.__deltaX = self._parameter['rho']*self.__deltaX+(1-self._parameter['rho'])*(self._dx**2)
@@ -316,13 +345,13 @@ class RMSprop(GradientDescentOptimizer):
         return self
     def _pre_iteration(self, x_init):
         super()._pre_iteration(x_init)
-        self.__sigma = np.zeros( x_init.size, dtype=np.float64 )
+        self.__sigma = np.zeros( x_init.shape, dtype=np.float64 )
         return self
     def _updata_one(self):
         """ update the parameter in one step"""
         self._parameter['counter'] += 1
         self._x += self._dx
-        self._y, dy_dx = self.gradient( self._x )
+        self._y, dy_dx = self.y_and_gradient( self._x )
         self.__sigma = self._parameter['rho']*self.__sigma+(1-self._parameter['rho'])* (dy_dx**2)
         self._dx = - self._parameter['learning_rate'] * dy_dx/np.sqrt( self.__sigma+self._parameter['epsilon'] ) 
         return self
@@ -368,14 +397,14 @@ class Adam(GradientDescentOptimizer):
         return self
     def _pre_iteration(self, x_init):
         super()._pre_iteration(x_init)
-        self.__vt = np.zeros( x_init.size, dtype=np.float64 )
-        self.__sigma = np.zeros( x_init.size, dtype=np.float64 )
+        self.__vt = np.zeros( x_init.shape, dtype=np.float64 )
+        self.__sigma = np.zeros( x_init.shape, dtype=np.float64 )
         return self
     def _updata_one(self):
         """ update the parameter in one step"""
         self._parameter['counter'] += 1
         self._x += self._dx
-        self._y, dy_dx = self.gradient( self._x )
+        self._y, dy_dx = self.y_and_gradient( self._x )
         # vt and sigma
         self.__vt = self._parameter['beta1']*self.__vt + (1-self._parameter['beta1'])*dy_dx
         self.__sigma = self._parameter['beta2']*self.__sigma+(1-self._parameter['beta2'])* (dy_dx**2)
@@ -458,40 +487,42 @@ if __name__ == '__main__':
     #grad = lambda x: 2*(x-1)
     #y_grad = lambda x: ( y(x), grad(x) )
     #x_init = np.array( 1.5 )
-    
+        
+    y_grad = y_grad
+    grad_flag = True
     """ example gradient descent """
-    gd = GradientDescent( target_fun=y, fun_gradient=y_grad, 
+    gd = GradientDescent( target_fun=y_grad, fun_gradient=grad_flag, 
                           print_iter_flag=True, print_every_iter=100, save_history_flag=True,
                           max_iter=5e4, dx=1e-10, tol=1e-5, lr=1e-2)
     test(gd, x_init, N=1)
 
     """ example momentum """
-    momentum = Momentum( target_fun=y, fun_gradient=y_grad, 
+    momentum = Momentum( target_fun=y_grad, fun_gradient=grad_flag, 
                          print_iter_flag=True, print_every_iter=100, save_history_flag=True,
                          max_iter= 5e4, dx=1e-10, tol=1e-5, v_init=0.0, lr=0.001, beta=0.9 )
     test(momentum, x_init, N=1)
 
     """ example AdaGrad """
-    adagrad = AdaGrad( target_fun=y, fun_gradient=y_grad, 
+    adagrad = AdaGrad( target_fun=y_grad, fun_gradient=grad_flag, 
                        print_iter_flag=True, print_every_iter=100, save_history_flag=True,
                        max_iter= 5e4, dx=1e-10, tol=1e-5, epsilon=1e-8, lr=0.5 )
     test(adagrad, x_init, N=1)
 
     """ example AdaDelta """
-    adadelta = AdaDelta( target_fun=y, fun_gradient=y_grad, 
+    adadelta = AdaDelta( target_fun=y_grad, fun_gradient=grad_flag, 
                          print_iter_flag=True, print_every_iter=100, save_history_flag=True,
                          max_iter= 5e4, dx=1e-10, tol=1e-5, rho=0.9, epsilon=1e-8 )
     test(adadelta, x_init, N=1)
 
 
     """ example AdaDelta """
-    rmsprop = RMSprop( target_fun=y, fun_gradient=y_grad, 
+    rmsprop = RMSprop( target_fun=y_grad, fun_gradient=grad_flag, 
                        print_iter_flag=True, print_every_iter=100, save_history_flag=True,
                        max_iter= 5e4, dx=1e-10, tol=1e-5, rho=0.9, epsilon=1e-8, lr=0.01 )
     test(rmsprop, x_init, N=1)
 
     """ example AdaDelta """
-    adam = Adam( target_fun=y, fun_gradient=y_grad, 
+    adam = Adam( target_fun=y_grad, fun_gradient=grad_flag, 
                        print_iter_flag=True, print_every_iter=100, save_history_flag=True,
                        max_iter= 5e4, dx=1e-10, tol=1e-5, 
                        beta1=0.9, beta2=0.999, epsilon=1e-8, lr=0.1 )

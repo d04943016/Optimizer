@@ -76,11 +76,11 @@ a derived class of **IterationOptimizer**, a virtual class related to gradient d
 
 (a) parameter<br/>
 * `target_fun`: target function<br/>
-* `fun_gradient`: the gradient of target function if fun_gradient is None, the optimizer would use -two-point- method to do the numerical gradient.<br/>
-There are two types of output<br/>
-a. dy_dx = fun_gradient(x)<br/>
-b. y, dy_dx = fun_gradient(x) (faster)<br/>
-, where dy_dx is the gradient of target_function with the same size of x and y is the output of target_function.<br/>
+* `fun_gradient`:  the gradient of target function<br/>
+  If fun_gradient is None, the optimizer would use -two-point- method to do the numerical gradient (i.e. dy_dx = fun_gradient(x), dy_dx shoud be in the same shape of x)<br/>
+ Or fun_gradient can be a gradient provided flag (bool). <br/>
+ If fun_gradient is True, it indicates that target_fun provided two returns value (y, dy_dx = target_fun(x)). <br/>
+ If fun_gradient is False, the optimzer would use -two-point- method to do the numerical gradient.<br/>
 * `name:` the name of optimizer<br/>
 * `max_iter`: maximum iteration<br/>
 * `print_iter_flag`: whether to print the optimizing information when optimzing<br/>

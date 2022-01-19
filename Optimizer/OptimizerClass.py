@@ -16,7 +16,7 @@ class Optimizer:
     """
     def __init__(self, target_fun=None, name:str = ''):
         self.name = name
-        self.__target_fun = target_fun
+        self._target_fun = target_fun
         self._parameter = {}
         self.state_reset()
     """ untility """
@@ -64,7 +64,7 @@ class Optimizer:
     """ property """
     @property
     def target_fun(self):
-        return self.__target_fun 
+        return self._target_fun 
     @property
     def optimized_flag(self)->bool:
         """ whether the target function is optimized or not """
@@ -83,7 +83,7 @@ class Optimizer:
     @target_fun.setter
     def target_fun(self, target_fun):
         """ target function """
-        self.__target_fun = target_fun
+        self._target_fun = target_fun
         self.state_reset()
 class IterationOptimizer(Optimizer):
     def __init__(self, target_fun=None, name:str='', max_iter:int= 1e3, print_iter_flag:bool=True, 
@@ -332,7 +332,7 @@ class MultiOptimizer(Optimizer):
         return self.__optimizer_list
     @property
     def target_fun(self):
-        return self.__target_fun 
+        return self._target_fun 
     """ setter """
     @optimizer_list.setter
     def optimizer_list(self, optimizer_list):
@@ -343,7 +343,7 @@ class MultiOptimizer(Optimizer):
     @target_fun.setter
     def target_fun(self, target_fun):
         """ target function """
-        self.__target_fun = target_fun
+        self._target_fun = target_fun
         self.state_reset()
         for optimizer in self.optimizer_list:
             optimizer.target_fun = target_fun
