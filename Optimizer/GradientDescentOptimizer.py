@@ -84,10 +84,16 @@ class GradientDescentOptimizer(IterationOptimizer):
     def _print_one(self):
         """ print the information in one step """
         if self._parameter['counter'] == 0:
-            print( '{0:>10s}  {1:>10s}  {2:>10s} {3:<10s}'.format('count', 'y', 'max(abs(dx))', 'x') )
+            if len( self._x ) > IterationOptimizer._DATA_LEN_:
+                print( '{0:>10s}  {1:>10s}  {2:>10s}'.format('count', 'y', 'max(abs(dx))') )
+            else:
+                print( '{0:>10s}  {1:>10s}  {2:>10s} {3:<10s}'.format('count', 'y', 'max(abs(dx))', 'x') )
             print( '-'*47 )
-        str1 = '{0}'.format(self._x) 
-        print( '{0:>10d}  {1:>10.5e}  {2:>10.5e} {3:<10s}'.format(self._parameter['counter'], self._y, np.max( np.abs(self._dx) ), str1) )
+        if len( self._x ) > IterationOptimizer._DATA_LEN_:
+            print( '{0:>10d}  {1:>10.5e}  {2:>10.5e}'.format(self._parameter['counter'], self._y, np.max( np.abs(self._dx) )) )
+        else:
+            str1 = '{0}'.format(self._x) 
+            print( '{0:>10d}  {1:>10.5e}  {2:>10.5e} {3:<10s}'.format(self._parameter['counter'], self._y, np.max( np.abs(self._dx) ), str1) )
         return self
     def _termination(self):
         return ( np.max( np.abs(self._dx) ) > self._parameter['tol'] ) & (self._parameter['counter']<self._parameter['max_iter'])
@@ -242,7 +248,7 @@ class Momentum(GradientDescentOptimizer):
 class AdaGrad(GradientDescentOptimizer):
     def __init__(self, target_fun=None, fun_gradient=None, name:str='AdaGrad', max_iter:int= 5e4, 
                  print_iter_flag:bool=True, print_every_iter:int=10, save_history_flag:bool=False,
-                 dx:float=1e-10, tol:float=1e-5, epsilon:float=1e-8, lr:float=0.5):
+                 dx:float=1e-10, tol:float=1e-5, epsilon:float=1e-07, lr:float=0.001):
         super().__init__( target_fun=target_fun, fun_gradient=fun_gradient, 
                           name=name, max_iter= max_iter, 
                           print_iter_flag=print_iter_flag,print_every_iter=print_every_iter, 
@@ -284,7 +290,7 @@ class AdaGrad(GradientDescentOptimizer):
 class AdaDelta(GradientDescentOptimizer):
     def __init__(self, target_fun=None, fun_gradient=None, name:str='AdaDelta', max_iter:int= 5e4, 
                  print_iter_flag:bool=True, print_every_iter:int=10, save_history_flag:bool=False,
-                 dx:float=1e-10, tol:float=1e-5, rho:float=0.9, epsilon:float=1e-8):
+                 dx:float=1e-10, tol:float=1e-5, rho:float=0.95, epsilon:float=1e-7, lr=1.0):
         super().__init__( target_fun=target_fun, fun_gradient=fun_gradient, 
                           name=name, max_iter= max_iter, 
                           print_iter_flag=print_iter_flag,print_every_iter=print_every_iter, 
@@ -292,6 +298,7 @@ class AdaDelta(GradientDescentOptimizer):
                           dx=dx, tol=tol )
         self._parameter['rho'] = rho
         self._parameter['epsilon'] = epsilon
+        self._parameter['learning_rate'] = lr
         self.state_reset()
     def state_reset(self):
         super().state_reset()
@@ -309,7 +316,7 @@ class AdaDelta(GradientDescentOptimizer):
         self._x += self._dx
         self._y, dy_dx = self.y_and_gradient( self._x )
         self.__sigma = self._parameter['rho']*self.__sigma+(1-self._parameter['rho'])*(dy_dx**2)
-        self._dx = - np.sqrt( self.__deltaX+self._parameter['epsilon'] ) * dy_dx/np.sqrt( self.__sigma+self._parameter['epsilon'] )
+        self._dx = - self._parameter['learning_rate'] * np.sqrt( self.__deltaX+self._parameter['epsilon'] ) * dy_dx/np.sqrt( self.__sigma+self._parameter['epsilon'] )
         self.__deltaX = self._parameter['rho']*self.__deltaX+(1-self._parameter['rho'])*(self._dx**2)
         return self
     """ property """
@@ -329,7 +336,7 @@ class AdaDelta(GradientDescentOptimizer):
 class RMSprop(GradientDescentOptimizer):
     def __init__(self, target_fun=None, fun_gradient=None, name:str='RMSprop', max_iter:int= 5e4, 
                  print_iter_flag:bool=True, print_every_iter:int=10, save_history_flag:bool=False,
-                 dx:float=1e-10, tol:float=1e-5, rho:float=0.9, epsilon:float=1e-8, lr:float=0.01):
+                 dx:float=1e-10, tol:float=1e-5, rho:float=0.9, epsilon:float=1e-7, lr:float=0.001):
         super().__init__( target_fun=target_fun, fun_gradient=fun_gradient, 
                           name=name, max_iter= max_iter, 
                           print_iter_flag=print_iter_flag,print_every_iter=print_every_iter, 
@@ -379,7 +386,7 @@ class Adam(GradientDescentOptimizer):
     def __init__(self, target_fun=None, fun_gradient=None, name:str='Adam', max_iter:int= 5e4, 
                  print_iter_flag:bool=True, print_every_iter:int=10, save_history_flag:bool=False,
                  dx:float=1e-10, tol:float=1e-5, 
-                 beta1:float=0.9, beta2:float=0.999, epsilon:float=1e-8, lr:float=0.1):
+                 beta1:float=0.9, beta2:float=0.999, epsilon:float=1e-7, lr:float=0.001):
         super().__init__( target_fun=target_fun, fun_gradient=fun_gradient, 
                           name=name, max_iter= max_iter, 
                           print_iter_flag=print_iter_flag,print_every_iter=print_every_iter, 

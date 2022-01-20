@@ -190,6 +190,7 @@ class IterationOptimizer(Optimizer):
         self._parameter['counter'] = 0
         self._x = copy.deepcopy( x_init )
         self._y = self.target_fun(self._x)
+        np.set_printoptions(precision=2, suppress=True)
         return self
     def _add_one_to_history(self):
         """ add the current state into history list """
@@ -272,6 +273,7 @@ class IterationOptimizer(Optimizer):
     @save_history_flag.setter
     def save_history_flag(self, save_history_flag:bool):
         self._parameter['save_history_flag'] = int(save_history_flag)
+    _DATA_LEN_ = 30
 class DummyOptimizer(Optimizer):
     def __init__(self, target_fun=None, name:str='Dummy' ):
         super().__init__( target_fun=target_fun, name=name )
