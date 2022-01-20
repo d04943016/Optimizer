@@ -15,10 +15,10 @@ class Optimizer:
     Optimizer is a virtual class for optimization method. 
     """
     def __init__(self, target_fun=None, name:str = ''):
-        self.name = name
-        self._target_fun = target_fun
-        self._parameter = {}
-        self.state_reset()
+        self.name = name # the name of optimizer
+        self._target_fun = target_fun # the target function 
+        self._parameter = {} # the parameter's that needs to be saved
+        self.state_reset() 
     """ untility """
     def __repr__(self):
         """ oprimizer string """
@@ -263,9 +263,6 @@ class IterationOptimizer(Optimizer):
     @max_iter.setter
     def max_iter(self, max_iter:int):
         self._parameter['max_iter'] = int(max_iter)
-    @counter.setter
-    def counter(self, counter:int):
-        self._parameter['counter'] = int(counter)
     @print_iter_flag.setter
     def print_iter_flag(self, print_iter_flag:bool):
         self._parameter['print_iter_flag'] = bool(print_iter_flag)
@@ -284,12 +281,12 @@ class DummyOptimizer(Optimizer):
         return self.optimized_x
 class MultiOptimizer(Optimizer):
     def __init__(self, target_fun=None, name:str='MultiOptimizer', optimizer_list = None ):
-        self.__optimizer_list = optimizer_list
-        if self.__optimizer_list is None:
-            self.__optimizer_list = None
+        self._optimizer_list = optimizer_list
+        if self._optimizer_list is None:
+            self._optimizer_list = None
         super().__init__( target_fun=target_fun, name=name )
     def __iter__(self):
-        for optimizer in self.__optimizer_list:
+        for optimizer in self._optimizer_list:
             yield optimizer
     def optimize(self, x_init:np.ndarray)->np.ndarray:
         self._x = copy.deepcopy(x_init)
@@ -318,7 +315,9 @@ class MultiOptimizer(Optimizer):
     def print_state(self):
         """ print the optimizer's state """
         super().print_parameter()
-        for optimizer in self.optimizer_list:
+        for ii, optimizer in enumerate(self.optimizer_list):
+            print('')
+            print('- sub-optimizer[{0}]'.format(ii))
             optimizer.print_state()
         return self
     def state_reset(self):
@@ -329,16 +328,16 @@ class MultiOptimizer(Optimizer):
     """ property """
     @property
     def optimizer_list(self):
-        return self.__optimizer_list
+        return self._optimizer_list
     @property
     def target_fun(self):
         return self._target_fun 
     """ setter """
     @optimizer_list.setter
     def optimizer_list(self, optimizer_list):
-        self.__optimizer_list = optimizer_list
-        if (self.__optimizer_list) is None:
-            self.__optimizer_list = []
+        self._optimizer_list = optimizer_list
+        if (self._optimizer_list) is None:
+            self._optimizer_list = []
         self.state_reset()
     @target_fun.setter
     def target_fun(self, target_fun):
@@ -354,3 +353,132 @@ class MultiOptimizer(Optimizer):
         for optimizer in self.optimizer_list:
             flag = ( flag and optimizer.optimized_flag )
         return flag
+class MultiIterationOptimizer(MultiOptimizer):
+    def __init__(self, target_fun=None, name:str='MultiIterationOptimizer', optimizer_list = None, 
+                 print_iter_flag:bool=True, save_history_flag:bool=False ):
+        super().__init__( target_fun=target_fun, name=name, optimizer_list=optimizer_list )
+        self.print_iter_flag = print_iter_flag
+        self.save_history_flag = save_history_flag
+    """ utility """
+    def reset_history(self):
+        """ reset history """
+        for optimizer in self.optimizer_list:
+            optimizer.reset_history()
+        return self
+    def save_history(self, savefilename:str=None, savefilepath:str='./'):
+        """ save history """
+        if not self._parameter['save_history_flag']:
+            return
+        if savefilename is None:
+            savefilename = self.name
+        if not os.path.isdir(savefilepath):
+            os.makedirs( savefilepath )
+        keytuple, hist_dict = self.history_dict
+        with open( os.path.join( savefilepath, savefilename+'_history.txt'), 'w') as file:
+            # first line
+            for key in keytuple:
+                file.write('{0:>15}'.format(key))
+            file.write('\n')
+            # data
+            count = len( hist_dict[keytuple[0]] )
+            for ii in range(count):
+                for key in keytuple:
+                    data = hist_dict[key][ii]
+                    if isinstance( data, int ):
+                        file.write('{0:>15d}'.format( data ))
+                    else:
+                        file.write('{0:>15.5e}'.format( data ))
+                file.write('\n')
+        return self
+    def plot_history(self, savefilename:str=None, savefilepath:str='./', showbool=False):
+        """ plot history """
+        if not self._parameter['save_history_flag']:
+            return
+        if savefilename is None:
+            savefilename = self.name
+        if not os.path.isdir(savefilepath):
+            os.makedirs( savefilepath )
+        keytuple, hist_dict = self.history_dict
+        count_list = hist_dict['count_list']
+        for key in keytuple:
+            if key=='count_list':
+                continue
+            plt.plot(count_list, hist_dict[key])
+            plt.xlabel('count')
+            plt.ylabel(key)
+            plt.savefig( os.path.join( savefilepath, savefilename+'_'+key+'_history.png'), bbox_inches='tight' )
+            if showbool:
+                plt.show()
+            plt.close()
+        return self
+    """ property """
+    @property 
+    def print_iter_flag(self):
+        return self._parameter['print_iter_flag']
+    @property
+    def save_history_flag(self):
+        return self._parameter['save_history_flag']
+    @property
+    def counter(self):
+        counter = 0
+        for optimizer in self.optimizer_list:
+            counter += optimizer.counter
+        return counter
+    @property
+    def history_dict(self):
+        # get histories
+        key_list, histories = self.histories_list
+        # count_list and y_history 
+        tmp_dict = {}
+        for key in key_list[1::]:
+            tmplist = np.asarray([])
+            for ii, history in enumerate( histories ):
+                tmplist = np.append( tmplist, history[key] if (ii==0) else history[key][1::] )
+            tmp_dict[key] = tmplist
+        key_list = ['count_list'] + list(key_list)
+        tmp_dict['count_list'] = np.arange( len(tmp_dict['y_history']) )
+        return tuple(key_list), tmp_dict
+    @property
+    def histories_list(self):
+        key_list, histories = None, [None] * len(self.optimizer_list)
+        for ii, optimizer in enumerate( self.optimizer_list ):
+            key_list, histories[ii] = optimizer.history_dict
+        return key_list, histories
+    """
+    @property
+    def history_dict(self):
+        # get histories
+        keys_list, histories = self.histories_list
+        # count_list and y_history # 1st elemnet:count_list, 2nd: y_history
+        y_history = np.asarray( [] )
+        for ii, history in enumerate( histories ):
+            y_history = np.append( y_history, history['y_history'] if (ii==0) else history['y_history'][1::] )
+        count_list = np.arange( len(y_history) )
+        tmp_dict = {'count_list': count_list, 'y_history': np.asarray( y_history ) }
+        # others
+        key_list = set( keys_list[0][2::] ).intersection( *keys_list[1::] ) 
+        for key in key_list:
+            tmp_list = np.asarray( [] )
+            for ii, history in enumerate( histories ):
+                tmp_list = np.append( tmp_list, history[key] if ii==0 else history[key][1::] )
+            tmp_dict[key] = tmp_list
+        key_list = ['count_list', 'y_history'] + list(key_list)
+        return tuple(key_list), tmp_dict
+    @property
+    def histories_list(self):
+        keys_list, histories = [None] * len(self.optimizer_list), [None] * len(self.optimizer_list)
+        for ii, optimizer in enumerate( self.optimizer_list ):
+            keys_list[ii], histories[ii] = optimizer.history_dict
+        return keys_list, histories
+    """
+    """ setter """
+    @print_iter_flag.setter
+    def print_iter_flag(self, print_iter_flag:bool):
+        for optimizer in self.optimizer_list:
+            optimizer.print_iter_flag = print_iter_flag
+        self._parameter['print_iter_flag'] = print_iter_flag
+    @save_history_flag.setter
+    def save_history_flag(self, save_history_flag:bool):
+        for optimizer in self.optimizer_list:
+            optimizer.save_history_flag = save_history_flag
+        self._parameter['save_history_flag'] = save_history_flag

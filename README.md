@@ -221,6 +221,24 @@ a derived class of GradientDescentOptimizer, using scipy.optimize and L-BFGS-B t
 
 (M) `GeneticAlgorithm (TODO)`<br/>
 
+(N) `MultiIterationOptimizer(target_fun=None, name:str='MultiIterationOptimizer', optimizer_list = None, print_iter_flag:bool=True, save_history_flag:bool=False)`<br/>
+a derived calss of MultiOptimizer that can combine different iteration optimizer (IterationOptimizer) in the order in the optimizer_list<br/>
+
+(a) parameters<br/>
+* `print_iter_flag`: whether to print the optimizing information when optimzing<br/>
+* `save_history_flag`: whether to save the history when optimizing<br/>
+
+(b) utility<br/>
+* `.reset_history()->self`: reset the history of optimization<br/>
+* `.save_history(savefilename:str=None, savefilepath:str='./')->self`: save the history of optimization<br/>
+* `.plot_history(savefilename:str=None, savefilepath:str='./')->self`: plot the history of optimization<br/>
+
+(c) property<br/>
+* `.history_dict -> dict`: history dictionary<br/>
+* `.histories_list`: a list of keys and a list of history dictionaries of each optimizer<br/>
+* `.counter (setter) -> int`: counter<br/>
+* `.print_iter_flag (setter) -> bool`: whether to print the optimizing information when optimzing<br/>
+* `.save_history_flag (setter) -> bool`: save_history_flag: whether to save the history when optimizing<br/>
 
 ### Hierarchy
 <p align="center">

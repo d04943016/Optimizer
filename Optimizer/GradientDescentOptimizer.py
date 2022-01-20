@@ -439,6 +439,7 @@ class Adam(GradientDescentOptimizer):
     @learning_rate.setter
     def learning_rate(self, learning_rate:float):
         self._parameter['learning_rate'] = learning_rate
+
 """ timer """
 def timer(optimier, x_init, N=1):
     import time
